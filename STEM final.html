@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEM Mash-Up Final: Nature's Wild Scientists!</title>
+    <script src="https://unpkg.com/three@0.139.2/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Lobster&display=swap');
+
+        :root {
+            --primary-bg: #0a043c; /* Deep space blue */
+            --container-bg: rgba(25, 10, 60, 0.88); /* Slightly transparent purple */
+            --text-color: #f0f0f0;
+            --title-color: #ffcc00; /* Sunny yellow */
+            --accent-color1: #00e676; /* Bright nature green */
+            --accent-color2: #ff6f00; /* Fiery orange */
+            --input-bg: rgba(255,255,255,0.1);
+            --input-border: var(--accent-color1);
+            --button-bg: linear-gradient(45deg, var(--accent-color1), #00c853);
+            --button-hover-bg: linear-gradient(45deg, #00c853, var(--accent-color1));
+            --correct-color: #00e676;
+            --incorrect-color: #ff5252;
+            --review-color: #ffab00; /* Amber for review */
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            line-height: 1.7;
+        }
+
+        #threejs-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: var(--container-bg);
+            border: 2px solid var(--title-color);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-family: 'Lobster', cursive;
+            font-size: 2.8em;
+            color: var(--title-color);
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            margin: 0;
+        }
+
+        header .subtitle {
+            font-size: 1.1em;
+            color: #f0e0ff; /* Light lavender */
+            margin-top: 5px;
+        }
+         header .presenter {
+            font-size: 1em;
+            color: #d0c0ee;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+
+        .section {
+            background-color: rgba(0,0,0,0.25);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-color1);
+        }
+        .section.fire-section {
+             border-left: 5px solid var(--accent-color2);
+        }
+        .section.sundial-section {
+             border-left: 5px solid var(--title-color);
+        }
+
+
+        .section-title {
+            font-family: 'Lobster', cursive;
+            font-size: 2em;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+        }
+        #cricket-title { color: var(--accent-color1); }
+        #sundial-title { color: var(--title-color); }
+        #flame-title { color: var(--accent-color2); }
+
+        .question-text, .info-text {
+            margin-bottom: 12px;
+            color: #e0e0f0;
+            font-size: 1.05em;
+        }
+         .info-text strong {
+            color: var(--text-color);
+        }
+
+        .activity-box {
+            background-color: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px dashed rgba(255,255,255,0.2);
+        }
+        .activity-box h4 {
+            margin-top:0;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        input[type="number"], input[type="text"], textarea, select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--input-border);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1em;
+        }
+        input[type="number"] { width: 100px; margin-right: 10px;}
+        textarea { min-height: 70px; resize: vertical; }
+
+        button.action-button {
+            padding: 10px 18px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            color: var(--primary-bg);
+            background: var(--button-bg);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+        button.action-button:hover {
+            background: var(--button-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        #submit-all-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-family: 'Lobster', cursive;
+            font-size: 1.8em;
+            color: var(--primary-bg);
+            background: linear-gradient(45deg, var(--title-color), #ffd633);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+            margin-top: 30px;
+            box-shadow: 0 0 15px var(--title-color);
+        }
+        #submit-all-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px var(--title-color), 0 0 15px var(--accent-color1);
+        }
+
+        #results-area {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            border: 1px solid var(--title-color);
+        }
+        #results-area h2 {
+            font-family: 'Lobster', cursive;
+            color: var(--title-color);
+            text-align: center;
+            font-size: 1.8em;
+        }
+        .feedback-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .feedback-item h4 { margin-top: 0; }
+        .feedback-item.correct { background-color: rgba(0, 230, 118, 0.15); border-left: 4px solid var(--correct-color); color: var(--correct-color);}
+        .feedback-item.incorrect { background-color: rgba(255, 82, 82, 0.15); border-left: 4px solid var(--incorrect-color); color: var(--incorrect-color);}
+        .feedback-item.review { background-color: rgba(255, 171, 0, 0.15); border-left: 4px solid var(--review-color); color: var(--review-color);}
+        .feedback-item p { margin-bottom: 5px; }
+        .feedback-item em { color: var(--text-color); font-style: normal; }
+
+        .final-tip {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: rgba(126, 87, 194, 0.2); /* Light purple */
+            border: 1px dashed var(--title-color);
+            border-radius: 8px;
+            text-align: center;
+            font-style: italic;
+            color: #e1bee7; /* Lighter purple text */
+        }
+        .final-tip strong {
+            font-family: 'Lobster', cursive;
+            color: var(--title-color);
+        }
+
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2em; }
+            .container { margin: 15px; padding: 15px; }
+            .section-title { font-size: 1.8em; }
+            #submit-all-button { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="threejs-canvas"></canvas>
+
+    <div class="container">
+        <header>
+            <h1>🧪🔥🌞 STEM Mash-Up Worksheet</h1>
+            <p class="subtitle">“Time, Fire & Crickets: Nature’s Wild Scientists!”</p>
+            <p class="presenter">Presented by James S. | Team Legacy Academy</p>
+        </header>
+
+        <form id="stem-quiz-form">
+
+            <!-- Section 1: Chirp-O-Meter -->
+            <div class="section" id="cricket-section">
+                <h2 class="section-title" id="cricket-title">🌡️ 1. Chirp-O-Meter: Predicting Temperature with Crickets!</h2>
+                <p class="info-text">Did you know crickets can be little thermometers with wings? It’s true, dear! Their chirping actually speeds up or slows down depending on the temperature. Crickets are cold-blooded. The warmer it is, the faster they chirp!</p>
+
+                <div class="activity-box">
+                    <h4>🎯 Activity: Count the Chirps!</h4>
+                    <p class="info-text">1. Go outside and find a cricket OR (https://youtu.be/CpGtBnVZLSk?feature=shared add 5sec of play).<br>2. Count how many chirps you hear in 15 seconds.<br>3. Add 40 to that number. That gives you the temperature in Fahrenheit!</p>
+                    
+                    <label for="chirp-count">Chirps in 15 seconds:</label>
+                    <input type="number" id="chirp-count" name="chirp_count" min="0">
+                    <button type="button" id="calculate-temp-btn" class="action-button">Calculate Temperature</button>
+                    <p id="cricket-temp-result" style="font-weight: bold; margin-top: 10px;"></p>
+
+                    <p class="info-text"><strong>Example:</strong> 30 chirps in 15 seconds → 30 + 40 = 70°F</p>
+                </div>
+
+                <div class="activity-box" style="margin-top:15px;">
+                    <h4>📚 Bonus: Cricket Forecast!</h4>
+                    <label for="cricket-forecast">Write your cricket forecast like a weather reporter:</label>
+                    <textarea id="cricket-forecast" name="cricket_forecast" placeholder="“Today’s forecast comes straight from Jiminy Cricket: It’s about ___°F and perfect for a picnic!”"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 2: Sun Dial DIY -->
+            <div class="section sundial-section" id="sundial-section">
+                <h2 class="section-title" id="sundial-title">⏳ 2. Sun Dial DIY: Solar-Powered Time Travel!</h2>
+                <p class="info-text">Before digital clocks and atomic watches, people used shadows to tell time! With just the sun and a stick, you can make your own sundial.</p>
+                
+                <div class="activity-box">
+                    <h4>🎯 Supplies Needed:</h4>
+                    <ul>
+                        <li>A paper plate (or a flat surface)</li>
+                        <li>A pencil or stick (your gnomon!)</li>
+                        <li>A sunny spot</li>
+                        <li>A clock for checking time</li>
+                    </ul>
+                    <h4>🔧 Instructions:</h4>
+                    <ol>
+                        <li>Poke the pencil through the center of the plate.</li>
+                        <li>Every hour, mark where the shadow falls and label it with the current time.</li>
+                        <li>Watch as the shadow moves throughout the day like a dancing fairy!</li>
+                    </ol>
+                </div>
+
+                <div class="activity-box" style="margin-top:15px;">
+                    <h4>🧠 Challenge Question:</h4>
+                    <label for="sundial-challenge">Why do you think the shadow moves during the day? What does it have to do with the Earth’s rotation?</label>
+                    <textarea id="sundial-challenge" name="sundial_challenge" placeholder="Explain your brilliant ideas here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Section 3: The Fiery Truth -->
+            <div class="section fire-section" id="flame-section">
+                <h2 class="section-title" id="flame-title">🔥 3. The Fiery Truth: What Is a Flame, Anyway?</h2>
+                <p class="info-text">Ah, a flame! It's not just a flickering bit of light—it’s a spectacular ballroom of atoms swirling in a heated dance!</p>
+
+                <div class="activity-box">
+                    <h4>🎯 Fill-in-the-Flame Fun!</h4>
+                    <p class="info-text">Match the description with the part of the flame:</p>
+                    <ul>
+                        <li><strong>Blue Base:</strong> <select name="flame_blue" id="flame_blue">
+                            <option value="">-- Select --</option>
+                            <option value="a">a) Carbon atoms glow yellow.</option>
+                            <option value="b">b) Hottest part where wax vapor meets oxygen.</option>
+                            <option value="c">c) So clean, it hardly glows at all!</option>
+                        </select></li>
+                        <li><strong>Yellow Middle:</strong> <select name="flame_yellow" id="flame_yellow">
+                            <option value="">-- Select --</option>
+                            <option value="a">a) Carbon atoms glow yellow.</option>
+                            <option value="b">b) Hottest part where wax vapor meets oxygen.</option>
+                            <option value="c">c) So clean, it hardly glows at all!</option>
+                        </select></li>
+                        <li><strong>Invisible Flame (often near the wick, very hot):</strong> <select name="flame_invisible" id="flame_invisible">
+                             <option value="">-- Select --</option>
+                            <option value="a">a) Carbon atoms glow yellow.</option>
+                            <option value="b">b) Hottest part where wax vapor meets oxygen.</option>
+                            <option value="c">c) So clean, it hardly glows at all! (This part, or above the visible flame)</option>
+                        </select></li>
+                    </ul>
+                    <p class="info-text"><small>Note: The original sheet had "Invisible Flame". This is often associated with very clean burning parts, like the hottest part or sometimes above the visible flame where combustion is complete. Option 'b' is often the hottest for the blue part, and 'c' can describe a very efficient burn where less light is produced. We will match based on common understanding from the worksheet.</small></p>
+                </div>
+                
+                <div class="activity-box" style="margin-top:15px;">
+                    <h4>🧠 Fun Fact Fill-in:</h4>
+                    <p class="info-text">When a candle burns, the wax turns into <input type="text" id="wax_product1" name="wax_product1" style="width:80px; display:inline-block;" placeholder="______">, which then mixes with <input type="text" id="wax_product2" name="wax_product2" style="width:80px; display:inline-block;" placeholder="______"> and ignites!</p>
+                </div>
+
+                <div class="activity-box" style="margin-top:15px;">
+                    <h4>🎨 Bonus Question: Understanding the Glow!</h4>
+                    <p class="info-text">What causes the "dancing soot" or the yellow glow in a candle flame?</p>
+                    <div class="options">
+                        <label><input type="radio" name="q_soot" value="a"> a) The wax melting quickly.</label><br>
+                        <label><input type="radio" name="q_soot" value="b"> b) Tiny glowing carbon particles.</label><br>
+                        <label><input type="radio" name="q_soot" value="c"> c) Oxygen reacting with the wick.</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-all-button">✨ Submit My Cosmic Discoveries! ✨</button>
+        </form>
+
+        <div id="results-area" style="display:none;">
+            <h2>📜 Your STEM Expedition Report! 📜</h2>
+            <!-- Feedback will be inserted here -->
+        </div>
+
+        <div class="final-tip">
+           <p><strong>👩‍🏫 James S. Final STEM Tip:</strong><br>
+            “Nature is the finest teacher, my Sons—just listen to the crickets, watch the shadows, and feel the warmth of a flame. There’s science bubbling in every nook of the world!”</p>
+        </div>
+    </div>
+
+    <script>
+        // --- THREE.JS - Cosmic Nature Lab ---
+        let scene, camera, renderer, stars;
+        let animatedCricket, rotatingEarth, flameParticles;
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('threejs-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+
+            // Stars
+            const starGeometry = new THREE.BufferGeometry();
+            const starVertices = [];
+            for (let i = 0; i < 10000; i++) {
+                const x = THREE.MathUtils.randFloatSpread(1500); // Wider spread for stars
+                const y = THREE.MathUtils.randFloatSpread(1500);
+                const z = THREE.MathUtils.randFloatSpread(1500);
+                if (Math.sqrt(x*x + y*y + z*z) > 50) { 
+                    starVertices.push(x, y, z);
+                }
+            }
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, transparent: true, opacity: 0.6 });
+            stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+
+            // Stylized Cricket (Simple Sphere with "legs")
+            animatedCricket = new THREE.Group();
+            const cricketBodyMat = new THREE.MeshPhongMaterial({ color: 0x38761d, shininess: 20 }); // Dark green
+            const cricketBody = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), cricketBodyMat);
+            animatedCricket.add(cricketBody);
+            for (let i = 0; i < 6; i++) {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), cricketBodyMat);
+                leg.position.y = -0.1;
+                leg.position.x = (i % 2 === 0 ? 1 : -1) * 0.2;
+                leg.position.z = (Math.floor(i/2) -1) * 0.2;
+                leg.rotation.z = (i % 2 === 0 ? 1 : -1) * Math.PI / 4;
+                animatedCricket.add(leg);
+            }
+            animatedCricket.position.set(-3, 1, -2); // Position in scene
+            scene.add(animatedCricket);
+
+            // Rotating Earth
+            rotatingEarth = new THREE.Group();
+            const earthTextureLoader = new THREE.TextureLoader();
+            // Using a simple blue sphere as a placeholder if detailed texture is too much
+            const earthMaterial = new THREE.MeshPhongMaterial({ color: 0x2952a3, shininess: 10 }); // Blue
+            const earthSphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), earthMaterial);
+            rotatingEarth.add(earthSphere);
+            // Simple "sunbeam" cone
+            const sunbeamMaterial = new THREE.MeshBasicMaterial({color: 0xffdd44, transparent: true, opacity: 0.5});
+            const sunbeam = new THREE.Mesh(new THREE.ConeGeometry(0.1, 1.5, 8), sunbeamMaterial);
+            sunbeam.position.set(1, 0.5, 0);
+            sunbeam.lookAt(earthSphere.position);
+            rotatingEarth.add(sunbeam);
+            rotatingEarth.position.set(0, -1, -3);
+            scene.add(rotatingEarth);
+            
+            // Flame Particles (Simple Emitter)
+            const flameMaterial = new THREE.PointsMaterial({
+                color: 0xff6f00, size: 0.1, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
+            });
+            const flameGeometry = new THREE.BufferGeometry();
+            const flamePosArray = new Float32Array(100 * 3); // 100 particles
+            for (let i = 0; i < 100 * 3; i++) flamePosArray[i] = (Math.random() - 0.5) * 0.1; // Start clustered
+            flameGeometry.setAttribute('position', new THREE.Float32BufferAttribute(flamePosArray, 3));
+            flameParticles = new THREE.Points(flameGeometry, flameMaterial);
+            flameParticles.position.set(3, 0, -2.5);
+            scene.add(flameParticles);
+
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x605050); scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffeedd, 1);
+            directionalLight.position.set(1, 1, 5); scene.add(directionalLight);
+
+            camera.position.z = 5;
+            animateThreeJS();
+        }
+
+        let cricketHopTime = 0;
+        let flameEmitterTime = 0;
+        function animateThreeJS() {
+            requestAnimationFrame(animateThreeJS);
+            stars.rotation.y += 0.0001;
+            stars.rotation.x += 0.00005;
+
+            // Cricket animation
+            cricketHopTime += 0.05;
+            animatedCricket.position.y = 1 + Math.abs(Math.sin(cricketHopTime)) * 0.2; // Gentle hop
+            animatedCricket.rotation.y += 0.005;
+
+            // Earth animation
+            if(rotatingEarth.children[0]) rotatingEarth.children[0].rotation.y += 0.005; // Rotate Earth sphere
+
+            // Flame particle animation
+            const positions = flameParticles.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length / 3; i++) {
+                positions[i * 3 + 1] += 0.01 + Math.random()*0.005; // Rise
+                positions[i * 3] += (Math.random() - 0.5) * 0.01;   // Spread
+                if (positions[i * 3 + 1] > 0.5 + Math.random()*0.3) { // Reset particle
+                    positions[i * 3 + 1] = (Math.random()-0.5) * 0.05; // y near emitter base
+                    positions[i * 3 ] = (Math.random()-0.5) * 0.1;     // x
+                    positions[i * 3 + 2] = (Math.random()-0.5) * 0.1;  // z
+                }
+            }
+            flameParticles.geometry.attributes.position.needsUpdate = true;
+
+
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        if (typeof THREE !== 'undefined') {
+            initThreeJS();
+        } else {
+            console.error("Three.js library not loaded.");
+        }
+
+        // --- QUIZ LOGIC ---
+        const quizForm = document.getElementById('stem-quiz-form');
+        const resultsArea = document.getElementById('results-area');
+        const calculateTempBtn = document.getElementById('calculate-temp-btn');
+        const cricketTempResultEl = document.getElementById('cricket-temp-result');
+
+        calculateTempBtn.addEventListener('click', function() {
+            const chirpCount = parseInt(document.getElementById('chirp-count').value);
+            if (!isNaN(chirpCount) && chirpCount >= 0) {
+                const temperature = chirpCount + 40;
+                cricketTempResultEl.textContent = `Calculated Temperature: ${temperature}°F`;
+                 cricketTempResultEl.style.color = 'var(--accent-color1)';
+            } else {
+                cricketTempResultEl.textContent = 'Please enter a valid number of chirps.';
+                cricketTempResultEl.style.color = 'var(--incorrect-color)';
+            }
+        });
+
+        // Flame Matching Correct Answers (based on typical understanding and hints)
+        // Blue Base (hottest, vapor meets oxygen) -> b
+        // Yellow Middle (glowing carbon) -> a
+        // Invisible Flame (clean burn, or very hot region) -> c or b (Let's assign b to blue base as more distinct for "hottest", and c to invisible if it implies complete combustion with less glow)
+        // The prompt is a bit ambiguous, but generally:
+        // Blue Base: Hottest point, good combustion with oxygen - option b
+        // Yellow Middle: Incomplete combustion, glowing soot (carbon) - option a
+        // Invisible Flame: Area of complete combustion, can be above yellow, or close to wick if blue is also there. If it "hardly glows", it's efficient - option c.
+        const flameCorrectAnswers = {
+            flame_blue: 'b',
+            flame_yellow: 'a',
+            flame_invisible: 'c' 
+        };
+        
+        const funFactAnswers = {
+            wax_product1: "gas", // or vapor
+            wax_product2: "oxygen"
+        };
+
+        const bonusSootAnswer = 'b';
+
+        quizForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            resultsArea.innerHTML = '<h2>📜 Your STEM Expedition Report! 📜</h2>'; // Clear previous
+            resultsArea.style.display = 'block';
+            let totalScore = 0;
+            let maxScore = 0;
+
+            // --- Cricket Section ---
+            const chirpCountVal = document.getElementById('chirp-count').value;
+            const cricketForecast = document.getElementById('cricket-forecast').value;
+            let cricketFeedback = '<div class="feedback-item review"><h4>🌡️ Chirp-O-Meter & Forecast</h4>';
+            if (chirpCountVal) {
+                cricketFeedback += `<p><em>Chirps entered:</em> ${chirpCountVal}</p>`;
+            } else {
+                 cricketFeedback += `<p><em>Chirp count activity not attempted.</em></p>`;
+            }
+            if (cricketForecast) {
+                cricketFeedback += `<p><em>Your Cricket Forecast:</em> "${cricketForecast}"</p><p>(Great creativity, James will love this!)</p>`;
+            } else {
+                 cricketFeedback += `<p><em>Cricket forecast bonus not attempted.</em></p>`;
+            }
+            cricketFeedback += '</div>';
+            resultsArea.innerHTML += cricketFeedback;
+            
+            // --- Sundial Section ---
+            const sundialChallenge = document.getElementById('sundial-challenge').value;
+            let sundialFeedback = '<div class="feedback-item review"><h4>⏳ Sun Dial Challenge</h4>';
+            if (sundialChallenge) {
+                sundialFeedback += `<p><em>Your explanation of shadow movement:</em> "${sundialChallenge}"</p><p>(James is excited to read your thoughts on Earth's rotation!)</p>`;
+            } else {
+                 sundialFeedback += `<p><em>Sundial challenge question not attempted.</em></p>`;
+            }
+            sundialFeedback += '</div>';
+            resultsArea.innerHTML += sundialFeedback;
+
+            // --- Flame Matching ---
+            maxScore += 3; // 1 point per match
+            let flameMatchScore = 0;
+            let flameMatchFeedbackHtml = '<h4>🎯 Fill-in-the-Flame Fun</h4>';
+            for (const part in flameCorrectAnswers) {
+                const userAnswer = document.getElementById(part).value;
+                const partName = part.replace('flame_', '').replace('_', ' ');
+                if (userAnswer === flameCorrectAnswers[part]) {
+                    flameMatchScore++;
+                    flameMatchFeedbackHtml += `<p><strong>${partName.charAt(0).toUpperCase() + partName.slice(1)}:</strong> Correct! <em>Your answer: ${userAnswer}</em></p>`;
+                } else {
+                    flameMatchFeedbackHtml += `<p><strong>${partName.charAt(0).toUpperCase() + partName.slice(1)}:</strong> Review needed. <em>Your answer: ${userAnswer || 'Not answered'}</em> (Correct: ${flameCorrectAnswers[part]})</p>`;
+                }
+            }
+            totalScore += flameMatchScore;
+            let flameMatchClass = flameMatchScore === 3 ? 'correct' : (flameMatchScore > 0 ? 'review' : 'incorrect');
+            resultsArea.innerHTML += `<div class="feedback-item ${flameMatchClass}">${flameMatchFeedbackHtml}<p><strong>Score for matching: ${flameMatchScore}/3</strong></p></div>`;
+
+            // --- Fun Fact Fill-in ---
+            maxScore += 2; // 1 point per blank
+            let funFactScore = 0;
+            let funFactFeedbackHtml = '<h4>🧠 Fun Fact Fill-in</h4>';
+            const userProduct1 = document.getElementById('wax_product1').value.toLowerCase();
+            const userProduct2 = document.getElementById('wax_product2').value.toLowerCase();
+            
+            if (userProduct1.includes(funFactAnswers.wax_product1) || userProduct1.includes("vapor")) {
+                funFactScore++;
+                funFactFeedbackHtml += `<p>First blank: Correct! (<em>${userProduct1}</em>)</p>`;
+            } else {
+                funFactFeedbackHtml += `<p>First blank: Review. <em>Your answer: ${userProduct1 || 'Not answered'}</em> (Expected: gas/vapor)</p>`;
+            }
+            if (userProduct2.includes(funFactAnswers.wax_product2)) {
+                funFactScore++;
+                funFactFeedbackHtml += `<p>Second blank: Correct! (<em>${userProduct2}</em>)</p>`;
+            } else {
+                 funFactFeedbackHtml += `<p>Second blank: Review. <em>Your answer: ${userProduct2 || 'Not answered'}</em> (Expected: oxygen)</p>`;
+            }
+            totalScore += funFactScore;
+            let funFactClass = funFactScore === 2 ? 'correct' : (funFactScore > 0 ? 'review' : 'incorrect');
+            resultsArea.innerHTML += `<div class="feedback-item ${funFactClass}">${funFactFeedbackHtml}<p><strong>Score for fill-in: ${funFactScore}/2</strong></p></div>`;
+
+            // --- Bonus Soot Question ---
+            maxScore += 1;
+            let sootScore = 0;
+            let sootFeedbackHtml = '<h4>🎨 Bonus Question: Understanding the Glow!</h4>';
+            const userSootAnswer = document.querySelector('input[name="q_soot"]:checked');
+            if (userSootAnswer) {
+                if (userSootAnswer.value === bonusSootAnswer) {
+                    sootScore++;
+                    sootFeedbackHtml += `<p>Correct! The yellow glow comes from glowing carbon particles. <em>Your answer: ${userSootAnswer.value}</em></p>`;
+                } else {
+                    sootFeedbackHtml += `<p>Review needed. <em>Your answer: ${userSootAnswer.value}</em> (Correct: ${bonusSootAnswer})</p>`;
+                }
+            } else {
+                 sootFeedbackHtml += `<p>Not answered.</p>`;
+            }
+            totalScore += sootScore;
+            let sootClass = sootScore === 1 ? 'correct' : 'incorrect';
+             if (!userSootAnswer) sootClass = 'incorrect';
+            resultsArea.innerHTML += `<div class="feedback-item ${sootClass}">${sootFeedbackHtml}<p><strong>Score for bonus: ${sootScore}/1</strong></p></div>`;
+
+            // --- Final Score Display ---
+             const overallScoreDisplay = document.createElement('div');
+             overallScoreDisplay.style.textAlign = 'center';
+             overallScoreDisplay.style.marginTop = '20px';
+             overallScoreDisplay.style.fontSize = '1.2em';
+             overallScoreDisplay.style.fontWeight = 'bold';
+             overallScoreDisplay.innerHTML = `🎉 Your Auto-Graded Score: ${totalScore} out of ${maxScore} points! 🎉<br><small>James S. will review your creative written answers separately!</small>`;
+             resultsArea.appendChild(overallScoreDisplay);
+
+
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        });
+
+    </script>
+</body>
+</html>
